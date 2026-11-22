@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>墨迹 · 手写模拟</title>
+<style>
+@font-face{font-family:'MSHand';src:url('./fonts/mashan.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'LCHand';src:url('./fonts/longcang.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'KLHand';src:url('./fonts/kuaile.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'LJHand';src:url('./fonts/liujian.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'ZMHand';src:url('./fonts/zhimang.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'QKHand';src:url('./fonts/qingke.woff2') format('woff2');font-display:swap}
+@font-face{font-family:'XWHand';src:url('./fonts/xiaowei.woff2') format('woff2');font-display:swap}
+
+:root{
+  --bg:#f5f3f9; --card:#ffffff; --ink:#2c2a35; --muted:#8a8796;
+  --primary:#6d5bd0; --primary-dark:#5a49bd; --primary-soft:#f0edfc;
+  --line:#e9e6f2; --radius:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%;overflow:hidden}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;
+  display:flex;flex-direction:column;
+}
+button,input,textarea{font-family:inherit}
+
+.topbar{
+  height:62px;flex:0 0 62px;background:var(--card);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;z-index:10;
+}
+.brand{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:700;letter-spacing:.5px}
+.brand .logo{
+  width:34px;height:34px;border-radius:10px;background:var(--primary-soft);
+  display:grid;place-items:center;font-size:19px;color:var(--primary)
+}
+.brand small{font-size:12px;color:var(--muted);font-weight:400;margin-left:2px}
+.top-actions{display:flex;gap:10px}
+.btn{
+  border:1px solid var(--line);background:#fff;color:var(--ink);
+  padding:9px 16px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;
+  transition:.18s;display:inline-flex;align-items:center;gap:6px;
+}
+.btn:hover{border-color:var(--primary);color:var(--primary)}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn.primary:hover{background:var(--primary-dark)}
+
+.layout{
+  width:100%;max-width:1440px;min-height:0;flex:1;margin:0 auto;padding:20px 24px;
+  display:grid;grid-template-columns:318px minmax(0,1fr);gap:22px;align-items:stretch;
+}
+.panel{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:20px;box-shadow:0 4px 20px rgba(60,45,110,.05);
+  min-height:0;overflow-y:auto;overscroll-behavior:contain;
+}
+.field{margin-bottom:19px}
+.field:last-child{margin-bottom:0}
+.field label{
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:12px;font-weight:700;color:#575463;margin-bottom:9px;letter-spacing:.3px;
+}
+.field label b{color:var(--primary);font-weight:700;font-variant-numeric:tabular-nums}
+.hint{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.45}
+textarea{
+  width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;
+  font-size:13px;line-height:1.7;resize:vertical;min-height:96px;color:var(--ink);
+  outline:none;transition:.18s;background:#fdfcff;
+}
+textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+input[type=range]{
+  width:100%;height:5px;appearance:none;background:#e8e5f0;border-radius:9px;outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  appearance:none;width:16px;height:16px;border-radius:50%;background:var(--primary);
+  border:3px solid #fff;box-shadow:0 1px 5px rgba(80,60,150,.35);cursor:pointer;
+}
+.seg{display:flex;gap:6px}
+.seg button{
+  flex:1;border:1px solid var(--line);background:#faf9fd;border-radius:9px;
+  padding:8px 4px;cursor:pointer;font-size:12px;color:#666276;transition:.18s;
+}
+.seg button:hover{border-color:var(--primary);color:var(--primary)}
+.seg button.on{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:700}
+.seg.fontbtn{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.seg.sizebtn{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.seg.sizebtn button{padding:6px 1px;font-size:11px}
+.seg.fontbtn button{font-size:23px;line-height:1.1;padding:7px 2px 5px}
+.seg.fontbtn button span{display:block;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;font-size:10px;font-weight:400;margin-top:3px;opacity:.85}
+.seg.fontbtn button.on span{opacity:1}
+.swatches{display:flex;gap:9px;align-items:center}
+.swatches button{
+  width:25px;height:25px;border-radius:50%;border:3px solid #fff;background:var(--c);
+  box-shadow:0 0 0 1px var(--line);cursor:pointer;transition:.15s;
+}
+.swatches button.on{box-shadow:0 0 0 2px var(--primary);transform:scale(1.08)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+details.advanced{border-top:1px dashed var(--line);padding-top:14px;margin-top:4px}
+details.advanced summary{cursor:pointer;font-size:12px;font-weight:700;color:#575463;list-style:none;display:flex;align-items:center;gap:6px}
+details.advanced summary::-webkit-details-marker{display:none}
+details.advanced summary::before{content:'▸';color:var(--primary);transition:.2s}
+details.advanced[open] summary::before{transform:rotate(90deg)}
+.adv-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.adv-grid .field{margin-bottom:0}
+.seedbox{display:flex;gap:7px;margin-top:6px}
+.seedbox input{
+  flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:6px 9px;
+  font-size:12px;color:var(--ink);outline:none;background:#fdfcff;
+}
+.seedbox input:focus{border-color:var(--primary)}
+.seedbox button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--primary)}
+
+.stage{
+  display:flex;flex-direction:column;align-items:center;gap:12px;min-width:0;min-height:0;
+  padding:20px;overflow:auto;overscroll-behavior:contain;
+  background:#eeecf4;border:1px solid var(--line);border-radius:var(--radius);
+}
+.paper-frame{
+  background:#fff;border-radius:6px;padding:0;position:relative;
+  box-shadow:0 10px 40px rgba(50,40,90,.13),0 2px 6px rgba(50,40,90,.06);
+  max-width:100%;
+}
+canvas{display:block;max-width:100%;height:auto}
+.pw-handle{
+  position:absolute;right:0;top:0;width:14px;height:100%;
+  cursor:ew-resize;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(90deg,transparent,rgba(109,91,208,.06));
+  transition:background .15s;
+}
+.pw-handle:hover,.pw-handle.active{background:rgba(109,91,208,.16)}
+.pw-handle::after{content:'';width:3px;height:38px;border-radius:3px;background:var(--primary);opacity:.35}
+.pw-handle:hover::after,.pw-handle.active::after{opacity:.9}
+.stage-note{font-size:12px;color:var(--muted);margin:0;text-align:center}
+.stage-note b{color:var(--primary);font-weight:700;font-variant-numeric:tabular-nums}
+.field label.personal-upload{display:block;border:1px dashed #b9afe8;border-radius:10px;padding:13px;background:#faf9ff;cursor:pointer;font-size:12px;color:#5b4cae;text-align:center}
+.personal-upload input{display:block;width:100%;margin-top:8px;font-size:11px;color:var(--muted)}
+.personal-preview{width:100%;max-height:150px;object-fit:contain;border:1px solid var(--line);border-radius:8px;background:#f8f7fb;margin-top:8px}
+.personal-preview[hidden]{display:none}
+.personal-empty{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  padding:24px;text-align:center;color:#6f6886;font-size:14px;line-height:1.7;
+}
+.personal-empty[hidden]{display:none}
+.personal-empty strong{display:block;color:#5548a1;font-size:18px;margin-bottom:8px}
+.personal-status{font-size:11px;line-height:1.5;color:#625d72;background:#f6f4fb;border-radius:8px;padding:9px 10px;margin:10px 0}
+.personal-status.warn{color:#8b542c;background:#fff6ec}
+.file-mode-notice{border:1px solid #efcda7;border-radius:9px;padding:11px 12px;background:#fff5e9;color:#805327;font-size:12px;line-height:1.6;margin-bottom:14px}
+.file-mode-notice[hidden]{display:none}
+.personal-progress{position:sticky;top:0;z-index:4;background:#f7f5ff;border:1px solid #dcd5fa;border-radius:10px;padding:11px 12px;margin-bottom:14px;box-shadow:0 4px 16px rgba(60,45,110,.12)}
+.personal-progress[hidden]{display:none}
+.personal-progress-head{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:12px;font-weight:700;color:#5849ae}
+.personal-progress-time{font-size:11px;font-weight:400;color:#777088;white-space:nowrap}
+.personal-progress-track{height:7px;background:#e3def7;border-radius:99px;overflow:hidden;margin-top:9px}
+.personal-progress-fill{width:36%;height:100%;border-radius:99px;background:var(--primary);animation:personal-progress-sweep 1.5s ease-in-out infinite}
+.personal-progress.done .personal-progress-fill{width:100%;animation:none;background:#4eaa79}
+.personal-progress.error .personal-progress-fill{width:100%;animation:none;background:#c27d59}
+.personal-progress.done .personal-progress-head{color:#367e58}
+.personal-progress.error .personal-progress-head{color:#995637}
+@keyframes personal-progress-sweep{from{transform:translateX(-110%)}to{transform:translateX(290%)}}
+.personal-glyphs{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;max-height:190px;overflow:auto;margin-top:8px}
+.personal-glyph{border:1px solid var(--line);border-radius:7px;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:var(--muted);background:#fff;cursor:pointer}
+.personal-glyph.off{opacity:.35;text-decoration:line-through}
+.personal-glyph canvas{height:34px;width:auto;max-width:100%}
+.personal-actions{display:flex;gap:7px;margin-top:8px}
+.personal-actions button{flex:1}
+.panel-section[hidden],.stage-note[hidden]{display:none}
+
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;grid-template-rows:minmax(210px,50%) minmax(0,1fr);gap:12px;padding:12px}
+  .topbar{padding:0 14px}
+  .stage{padding:12px}
+}
+@media(max-width:600px){
+  .brand small{display:none}
+  .topbar{padding:0 8px}
+  .top-actions{gap:3px}
+  .top-actions .btn{padding:7px 5px;font-size:10px}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><span class="logo">✍</span>墨迹<small>让字重新像手写</small></div>
+  <div class="top-actions">
+    <button class="btn primary" id="btnCopy" title="复制裁切后的透明字迹 PNG，可粘贴到文档">⧉ 复制字迹</button>
+    <button class="btn" id="btnCopyText" title="复制普通文字，不保留手写效果">复制文字</button>
+    <button class="btn" id="btnRewrite">↻ 重写一遍</button>
+    <button class="btn" id="btnExport" title="下载裁切后的透明字迹 PNG">⬇ 导出字迹</button>
+  </div>
+</header>
+
+<main class="layout">
+  <aside class="panel">
+    <div class="field">
+      <label>生成方式</label>
+      <div class="seg" id="modeSeg">
+        <button data-v="ordinary" class="on">普通手写</button>
+        <button data-v="personal">样本仿写</button>
+      </div>
+    </div>
+    <div id="ordinaryControls" class="panel-section">
+    <div class="field">
+      <label>要写的内容</label>
+      <textarea id="text">人生不必写得一丝不苟。
+偶尔的歪斜、停顿与深浅，才是手写的温度。</textarea>
+      <div class="hint">支持换行，中英文均可</div>
+    </div>
+
+    <div class="field" id="fontField">
+      <label>字体样式</label>
+      <div class="seg fontbtn" id="fontSeg">
+        <button data-v="mashan" class="on" style="font-family:'MSHand'">楷<span>毛笔楷</span></button>
+        <button data-v="longcang" style="font-family:'LCHand'">草<span>行草</span></button>
+        <button data-v="kuaile" style="font-family:'KLHand'">硬<span>硬笔</span></button>
+        <button data-v="liujian" style="font-family:'LJHand'">狂<span>狂草</span></button>
+        <button data-v="zhimang" style="font-family:'ZMHand'">行<span>行书</span></button>
+        <button data-v="qingke" style="font-family:'QKHand'">圆<span>圆体</span></button>
+        <button data-v="xiaowei" style="font-family:'XWHand'">雅<span>小薇</span></button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>画笔模拟幅度 <b id="penStrengthVal">60</b></label>
+      <input type="range" id="penStrength" min="0" max="100" value="60">
+      <div class="hint">0 = 不叠加画笔效果；数值越高，墨色、字势和笔画边缘的变化越明显。</div>
+    </div>
+
+    <div class="field" id="profileField">
+      <label>笔迹质感</label>
+      <div class="seg" id="profileSeg">
+        <button data-v="fine" class="on">细硬笔</button>
+        <button data-v="bold">较浓笔锋</button>
+      </div>
+      <div class="hint">参考您提供的样张，默认采用偏窄的细笔画与紧凑字距。</div>
+    </div>
+
+    <div class="field">
+      <label>潦草程度 <b id="messyVal">48</b></label>
+      <input type="range" id="messy" min="0" max="100" value="48">
+      <div class="hint">0 = 工整，100 = 潦草奔放</div>
+    </div>
+
+    <div class="field">
+      <label>字号 <b id="sizeVal">26</b></label>
+      <div class="seg sizebtn" id="sizeSeg">
+        <button data-v="20">小</button>
+        <button data-v="26" class="on">日常</button>
+        <button data-v="30">较小</button>
+        <button data-v="40">标准</button>
+        <button data-v="56">较大</button>
+        <button data-v="80">大</button>
+        <button data-v="110">特大</button>
+      </div>
+      <input type="range" id="size" min="16" max="120" value="26" style="margin-top:10px">
+      <div class="hint">点档位快速选，或拖滑块精细调</div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>行距 <b id="lhVal">1.5</b></label>
+        <input type="range" id="lh" min="1.2" max="2.4" step="0.1" value="1.5">
+      </div>
+      <div class="field"></div>
+    </div>
+
+    <div class="field">
+      <label>字幅宽度 <b id="pwVal">820</b></label>
+      <input type="range" id="pw" min="360" max="1600" step="10" value="820">
+      <div class="hint">纸面横向宽度；也可直接拖纸张右边缘调整</div>
+    </div>
+
+    <div class="field">
+      <label>每行字数 <b id="cplVal">自动</b></label>
+      <input type="range" id="cpl" min="0" max="40" value="0">
+      <div class="hint">0 = 自动按纸宽排；设定后每行固定字数，超出自动换行</div>
+    </div>
+
+    <div class="field">
+      <label>字距 <b id="lsVal">-3</b></label>
+      <input type="range" id="ls" min="-4" max="16" value="-3">
+    </div>
+
+    <div class="field">
+      <label>整体倾斜 <b id="tiltVal">0°</b></label>
+      <input type="range" id="tilt" min="-20" max="20" step="1" value="0">
+      <div class="hint">负数左倾、正数右倾，0 = 竖直；叠加在随机抖动之上</div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>字距波动 <b id="gapWaveVal">35</b></label>
+        <input type="range" id="gapWave" min="0" max="100" value="35">
+      </div>
+      <div class="field">
+        <label>上下波动 <b id="yWaveVal">40</b></label>
+        <input type="range" id="yWave" min="0" max="100" value="40">
+      </div>
+    </div>
+    <div class="hint" style="margin-top:-10px;margin-bottom:18px">两项拉到 0 = 字距匀速、横平竖直；数值越大越不规则</div>
+
+    <div class="field">
+      <label>墨色</label>
+      <div class="swatches" id="inkSeg">
+        <button data-v="#1f1d24" class="on" style="--c:#1f1d24"></button>
+        <button data-v="#1d2b4a" style="--c:#1d2b4a"></button>
+        <button data-v="#3d2b1c" style="--c:#3d2b1c"></button>
+        <button data-v="#8f2323" style="--c:#8f2323"></button>
+        <button data-v="#2f4f3e" style="--c:#2f4f3e"></button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>纸张</label>
+      <div class="seg" id="paperSeg">
+        <button data-v="blank" class="on">白纸</button>
+        <button data-v="cream">米白</button>
+        <button data-v="ruled">横格</button>
+        <button data-v="grid">方格</button>
+      </div>
+      <div class="hint">白纸/米白无横线；横格/方格带辅助线</div>
+    </div>
+
+    <details class="advanced">
+      <summary>精细调节</summary>
+      <div class="adv-grid">
+        <div class="field"><label>倾斜 <b id="advRotateVal">100%</b></label><input type="range" id="advRotate" min="0" max="250" value="100"></div>
+        <div class="field"><label>上下跳动 <b id="advYVal">100%</b></label><input type="range" id="advY" min="0" max="250" value="100"></div>
+        <div class="field"><label>间距不均 <b id="advGapVal">100%</b></label><input type="range" id="advGap" min="0" max="250" value="100"></div>
+        <div class="field"><label>墨色浓淡 <b id="advInkVal">100%</b></label><input type="range" id="advInk" min="0" max="250" value="100"></div>
+        <div class="field"><label>行波起伏 <b id="advWaveVal">100%</b></label><input type="range" id="advWave" min="0" max="250" value="100"></div>
+        <div class="field"><label>字形大小 <b id="advScaleVal">100%</b></label><input type="range" id="advScale" min="0" max="250" value="100"></div>
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label>笔迹编号（输入可复现）</label>
+        <div class="seedbox">
+          <input id="seedInput" type="text" inputmode="numeric" placeholder="数字编号">
+          <button id="btnSeed">应用</button>
+        </div>
+      </div>
+    </details>
+    </div>
+
+    <div id="personalControls" class="panel-section" hidden>
+      <div id="fileModeNotice" class="file-mode-notice" hidden>当前是直接打开 HTML 文件。请到此文件所在文件夹，双击「启动墨迹.cmd」打开浏览器版，再上传照片；这样自动识别才能运行。</div>
+      <div id="personalProgress" class="personal-progress" hidden role="status" aria-live="polite">
+        <div class="personal-progress-head"><span id="personalProgressTitle">正在处理</span><span id="personalProgressTime" class="personal-progress-time">0 秒</span></div>
+        <div id="personalProgressTrack" class="personal-progress-track" role="progressbar" aria-label="手写照片处理进度" aria-valuetext="正在处理"><div class="personal-progress-fill"></div></div>
+      </div>
+      <div class="field">
+        <label>手写段落照片</label>
+        <label class="personal-upload">选择一张清晰的手写照片
+          <input type="file" id="personalFile" accept="image/*">
+        </label>
+        <div class="personal-actions">
+          <button class="btn" id="personalRotate" type="button">↻ 旋转 90°</button>
+          <button class="btn" id="personalRecognize" type="button">重新识别文字</button>
+        </div>
+        <canvas id="personalPreview" class="personal-preview" hidden></canvas>
+      </div>
+      <div class="field">
+        <label>自动识别的原文（辅助估计字距）</label>
+        <textarea id="personalTranscript" placeholder="上传照片后会自动识别；识别不准时可在这里改字"></textarea>
+        <div class="hint">识别错字不会被当作字形复用；校对行数和字数可改善字距估计。</div>
+      </div>
+      <button class="btn primary" id="personalAnalyze" type="button" style="width:100%;justify-content:center">重新分析笔迹特征</button>
+      <div id="personalStatus" class="personal-status">上传照片后分析整段笔迹并生成预览。照片留在本机。</div>
+      <div class="field">
+        <label>要仿写的一段话</label>
+        <textarea id="personalTarget">风从窗边吹过，心里安静下来。</textarea>
+      </div>
+      <div class="field">
+        <label>仿写字号 <b id="personalSizeVal">30</b></label>
+        <input type="range" id="personalSize" min="20" max="50" value="30">
+      </div>
+      <div class="field">
+        <label>新字的基础骨架</label>
+        <div class="seg" id="personalFallbackSeg">
+          <button type="button" data-font="LCHand" class="on">轻细连写</button>
+          <button type="button" data-font="MSHand">笔锋楷写</button>
+          <button type="button" data-font="XWHand">端正清楚</button>
+        </div>
+        <div class="hint">提供汉字结构，笔画粗细与排版从照片估计；可换一种更接近样本的骨架。</div>
+      </div>
+      <div class="field">
+        <label>笔迹特征</label>
+        <div id="personalFeatures" class="hint">上传照片后显示笔画、字幅和行距的估计结果。</div>
+      </div>
+      <div id="personalGlyphs" hidden></div>
+    </div>
+  </aside>
+
+  <section class="stage">
+    <div class="paper-frame"><canvas id="cv"></canvas><div id="personalEmpty" class="personal-empty" hidden><div><strong>等待手写样本</strong><span id="personalEmptyText">上传照片后，系统会自动识别并生成仿写预览。</span></div></div><div class="pw-handle" id="pwHandle" title="左右拖动调整字幅宽度"></div></div>
+    <p class="stage-note" id="ordinaryNote">当前笔迹编号 <b id="seedLabel">#000000</b> · 点「重写一遍」换一份全新的手迹</p>
+    <p class="stage-note" id="personalNote" hidden>依据整段样本的笔画粗细、墨色、字幅和行距生成；新字使用可读字形骨架。当前为笔迹特征模拟。</p>
+    <p class="stage-note" id="fontNote" style="font-size:11px;opacity:.6;margin-top:2px;line-height:1.5">字体：马善政楷书、龙藏体、站酷快乐体、柳建毛草、志莽行书、站酷庆科黄油体、站酷小薇（均为 SIL OFL 授权）</p>
+  </section>
+</main>
+
+<script src="./ocr.js"></script>
+<script src="./personal.js"></script>
+<script>
+(function(){
+'use strict';
+
+const $ = id => document.getElementById(id);
+const cv = $('cv');
+const ctx = cv.getContext('2d', { alpha:false });
+const offCv = document.createElement('canvas');
+const offCtx = offCv.getContext('2d', { willReadFrequently:true });
+
+const FONTS = { mashan:'MSHand', longcang:'LCHand', kuaile:'KLHand', liujian:'LJHand', zhimang:'ZMHand', qingke:'QKHand', xiaowei:'XWHand' };
+let PAPER_W = 820;
+const MARGIN = 58;
+const TOP = 46;
+const BOTTOM = 46;
+const DPR = 2;
+
+const state = {
+  mode:'ordinary',
+  text:$('text').value,
+  penStrength:60,
+  font:'mashan',
+  profile:'fine',
+  messy:48,
+  size:26,
+  lh:1.5,
+  ls:-3,
+  charsPerLine:0,
+  gapWave:35,
+  yWave:40,
+  tilt:0,
+  ink:'#1f1d24',
+  paper:'blank',
+  seed:(Math.random()*1e9)|0,
+  adv:{ rotate:100, y:100, gap:100, ink:100, wave:100, scale:100 }
+};
+
+/* 稳定哈希伪随机：同一个 seed + 位置 + 盐 永远得到同一个数。
+   改字号、行距不会打乱整体笔迹，改 seed 则整篇重写。 */
+function rnd(seed, i, salt){
+  let h = (seed ^ Math.imul(i+1, 0x9e3779b1) ^ Math.imul(salt+1, 0x85ebca6b)) >>> 0;
+  h ^= h>>>16; h = Math.imul(h, 0x7feb352d);
+  h ^= h>>>15; h = Math.imul(h, 0x846ca68b);
+  h ^= h>>>16;
+  return (h>>>0) / 4294967296;
+}
+function signed(seed,i,salt){ return rnd(seed,i,salt)*2 - 1; }
+function advVal(key){ return state.adv[key]/100; }
+
+/* 潦草程度映射到各项物理抖动幅度 */
+function amps(){
+  const m = state.messy/100;
+  return {
+    rotate: (0.8 + m*10) * advVal('rotate') * Math.PI/180,
+    y:      (state.yWave/100*state.size*0.09 + m*0.4) * advVal('y'),
+    gap:    (state.gapWave/100*state.size*0.14 + m*0.3) * advVal('gap'),
+    scale:  (0.02 + m*0.11) * advVal('scale'),
+    shear:  (0.006 + m*0.075) * advVal('rotate'),
+    fade:   (0.03 + m*0.32) * advVal('ink'),
+    wave:   (0.4 + m*5.5) * advVal('wave'),
+    tilt:   (m*18) * advVal('wave'),
+    warp:   (0.35 + m*2.4) * advVal('wave')
+  };
+}
+function tiltRad(){ return state.tilt*Math.PI/180; }
+
+/* 按可用宽度折行，并把闭合标点留在行内（避免标点落在行首） */
+function layoutLines(maxW, fontCss){
+  ctx.font = state.size + 'px ' + fontCss;
+  const paras = state.text.replace(/\r/g,'').split('\n');
+  const lines = [];
+  const tail = /[，。！？、；：）》】”’」,.!?;:)\]}"']/;
+  paras.forEach(function(p){
+    if(p === ''){ lines.push([]); return; }
+    const chars = Array.from(p);
+    let line = [], w = 0;
+    chars.forEach(function(ch){
+      const cw = ctx.measureText(ch).width;
+      const over = state.charsPerLine>0 ? line.length>=state.charsPerLine : (w + cw + state.ls > maxW);
+      if(over && line.length){
+        if(tail.test(ch) && state.charsPerLine===0){
+          line.push(ch); lines.push(line); line = []; w = 0; return;
+        }
+        lines.push(line); line = [ch]; w = cw + state.ls;
+      } else {
+        line.push(ch); w += cw + state.ls;
+      }
+    });
+    lines.push(line);
+  });
+  return lines;
+}
+
+function waveLine(x1,x2,y,amp,phase,color,width){
+  ctx.beginPath();
+  ctx.strokeStyle = color; ctx.lineWidth = width || 1;
+  for(let x=x1; x<=x2; x+=26){
+    const yy = y + Math.sin(x*0.011 + phase)*amp*0.45 + Math.sin(x*0.031 + phase*1.7)*amp*0.18;
+    if(x===x1) ctx.moveTo(x,yy); else ctx.lineTo(x,yy);
+  }
+  ctx.stroke();
+}
+
+function drawPaper(W,H,lineCount,step,fontCss){
+  var bg = state.paper==='cream' ? '#fdf9ee' : '#ffffff';
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,W,H);
+
+  /* 固定纸纹，不随笔迹编号变化 */
+  ctx.fillStyle = 'rgba(110,95,70,0.035)';
+  for(let i=0;i<2200;i++){
+    const x = rnd(20240101,i,1)*W;
+    const y = rnd(20240101,i,2)*H;
+    ctx.fillRect(x,y,1,1);
+  }
+
+  if(state.paper==='ruled'){
+    for(let i=0;i<lineCount;i++){
+      const y = TOP + state.size*1.22 + i*step;
+      waveLine(24,W-24,y,1.2,i*1.3,'rgba(105,145,190,.30)');
+    }
+    ctx.strokeStyle='rgba(200,90,90,.24)';
+    ctx.beginPath(); ctx.moveTo(MARGIN-16,0); ctx.lineTo(MARGIN-16,H); ctx.stroke();
+  }
+
+  if(state.paper==='grid'){
+    const cw = state.size + state.ls;
+    for(let i=0;i<=lineCount;i++){
+      const y = TOP + state.size*0.22 + i*step;
+      waveLine(20,W-20,y,1.0,i*0.9,'rgba(120,150,185,.28)');
+    }
+    for(let x=MARGIN; x<=W-MARGIN+1; x+=cw){
+      ctx.strokeStyle='rgba(120,150,185,.20)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(x,TOP); ctx.lineTo(x,H-BOTTOM+state.size*0.5); ctx.stroke();
+    }
+  }
+}
+
+/* 笔画级扭曲：整行离屏渲染后，按二维波形逐像素水平位移。
+   同一个字在不同 x 位置受到不同扭曲，笔画骨架不再千篇一律。 */
+function warpRow(targetCtx,yTop,step,amp,phase){
+  const w = offCv.width, hh = offCv.height;
+  const img = offCtx.getImageData(0,0,w,hh);
+  const src = img.data;
+  const out = offCtx.createImageData(w,hh);
+  const dst = out.data;
+  const b1 = 0.021, b2 = 0.009;
+  const cosX1 = new Float32Array(w), sinX1 = new Float32Array(w);
+  const cosX2 = new Float32Array(w), sinX2 = new Float32Array(w);
+  for(let x=0;x<w;x++){
+    const v1=x*b1, v2=x*b2;
+    cosX1[x]=Math.cos(v1); sinX1[x]=Math.sin(v1);
+    cosX2[x]=Math.cos(v2); sinX2[x]=Math.sin(v2);
+  }
+  const ay1=0.14, ay2=0.047, aPx=amp*DPR;
+  for(let y=0;y<hh;y++){
+    const p1=y*ay1+phase, p2=y*ay2+phase*1.6;
+    const s1=Math.sin(p1), c1=Math.cos(p1), s2=Math.sin(p2), c2=Math.cos(p2);
+    const rowBase=y*w;
+    for(let x=0;x<w;x++){
+      const wave = 0.62*(s1*cosX1[x]+c1*sinX1[x]) + 0.38*(s2*cosX2[x]-c2*sinX2[x]);
+      let sx = x - Math.round(wave*aPx);
+      if(sx<0) sx=0; else if(sx>=w) sx=w-1;
+      const di=(rowBase+x)*4, si=(rowBase+sx)*4;
+      dst[di]=src[si]; dst[di+1]=src[si+1]; dst[di+2]=src[si+2]; dst[di+3]=src[si+3];
+    }
+  }
+  offCtx.putImageData(out,0,0);
+  targetCtx.drawImage(offCv,0,yTop,PAPER_W,step);
+}
+
+/* 字体提供字形；画笔效果在其上改变浓淡、字势和局部墨迹。 */
+function textureFontRow(phase,amount){
+  const img=offCtx.getImageData(0,0,offCv.width,offCv.height);
+  const d=img.data,w=offCv.width,h=offCv.height;
+  const fine=state.profile==='fine';
+  const m=state.messy/100;
+  for(let y=0;y<h;y++){
+    const yFlow=Math.sin(y*0.055+phase)*0.035;
+    for(let x=0;x<w;x++){
+      const i=(y*w+x)*4;
+      if(d[i+3]===0) continue;
+      const xFlow=Math.sin(x*0.039+phase*1.7)*0.055;
+      const grain=((x*13+y*29+(state.seed>>>0))%31)/31;
+      const fullStrength=fine ? 0.82+xFlow+yFlow-(1-grain)*0.11*m
+                              : 0.94+xFlow*0.45+yFlow*0.45-(1-grain)*0.05*m;
+      const strength=1-(1-fullStrength)*amount;
+      d[i+3]=Math.max(0,Math.min(255,Math.round(d[i+3]*strength)));
+    }
+  }
+  offCtx.putImageData(img,0,0);
+}
+function drawFontLine(targetCtx,line,li,maxW,step){
+  const fontCss='"'+FONTS[state.font]+'"';
+  const yTop=TOP+li*step;
+  offCv.width=PAPER_W*DPR;
+  offCv.height=Math.ceil(step*DPR);
+  offCtx.setTransform(DPR,0,0,DPR,0,0);
+  offCtx.font=state.size+'px '+fontCss;
+  offCtx.textBaseline='alphabetic';
+  offCtx.fillStyle=state.ink;
+  const amount=state.penStrength/100;
+  const a=amps();
+  const phase=rnd(state.seed,li,90)*Math.PI*2;
+  const tilt=signed(state.seed,li,91)*a.tilt;
+  let x=MARGIN;
+  line.forEach(function(ch,ci){
+    const idx=li*1000+ci;
+    const cw=offCtx.measureText(ch).width;
+    const rot=amount*signed(state.seed,idx,1)*a.rotate+tiltRad();
+    const lineWave=Math.sin(x*0.0085+phase)*a.wave;
+    const dy=amount*(signed(state.seed,idx,2)*a.y+lineWave+tilt*(x/maxW-0.5)*2);
+    const sc=1+amount*signed(state.seed,idx,3)*a.scale;
+    const sh=amount*signed(state.seed,idx,4)*a.shear;
+    const alpha=1-amount*rnd(state.seed,idx,5)*a.fade;
+    const widthScale=1-amount*(state.profile==='fine'?0.12:0);
+    const heightScale=1-amount*(state.profile==='fine'?0.04:0);
+    offCtx.save();
+    offCtx.translate(x+cw/2,state.size+dy);
+    offCtx.rotate(rot);
+    offCtx.transform(sc*widthScale,sh,0,sc*heightScale,-cw/2,0);
+    offCtx.globalAlpha=alpha;
+    offCtx.fillText(ch,0,0);
+    offCtx.restore();
+    x+=cw+state.ls+amount*signed(state.seed,idx,6)*a.gap;
+  });
+  if(amount>0){
+    textureFontRow(phase,amount);
+    if(a.warp*amount>0.05) warpRow(targetCtx,yTop,step,a.warp*amount,rnd(state.seed,li,77)*Math.PI*2);
+    else targetCtx.drawImage(offCv,0,yTop,PAPER_W,step);
+  }else targetCtx.drawImage(offCv,0,yTop,PAPER_W,step);
+}
+
+function draw(){
+  if(state.mode==='personal'){
+    window.PersonalHandwriting.render(cv,{width:PAPER_W,seed:state.seed});
+    $('personalEmpty').hidden=window.PersonalHandwriting.hasStyle();
+    $('personalEmptyText').textContent=window.PersonalHandwriting.getStepMessage();
+    $('seedLabel').textContent = '#' + (state.seed>>>0).toString(36).toUpperCase().padStart(6,'0').slice(0,6);
+    return;
+  }
+  $('personalEmpty').hidden=true;
+  const fontCss = '"' + FONTS[state.font] + '"';
+  ctx.font = state.size + 'px ' + fontCss;
+
+  const maxW = PAPER_W - MARGIN*2;
+  const lines = layoutLines(maxW, fontCss);
+  const step = state.size * state.lh;
+  const H = Math.max(280, Math.ceil(TOP + lines.length*step + BOTTOM));
+
+  cv.width = PAPER_W*DPR;
+  cv.height = H*DPR;
+  cv.style.width = PAPER_W + 'px';
+  cv.style.height = H + 'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  /* 设置 canvas 尺寸会重置绘图状态，必须重新声明字体，否则 measureText 按默认字号算 */
+  ctx.font = state.size + 'px ' + fontCss;
+  drawPaper(PAPER_W,H,lines.length,step,fontCss);
+
+  lines.forEach(function(line,li){
+    if(!line.length) return;
+    drawFontLine(ctx,line,li,maxW,step);
+  });
+
+  $('seedLabel').textContent = '#' + (state.seed>>>0).toString(36).toUpperCase().padStart(6,'0').slice(0,6);
+}
+
+/* 生成透明底、紧贴文字的图片画布（供复制用）。
+   复用与主画布相同的排版和 seed 随机，只画字不画纸，最后裁掉空白边。 */
+function buildTransparentCanvas(){
+  if(state.mode==='personal') return window.PersonalHandwriting.buildTransparent({width:PAPER_W,seed:state.seed});
+  const tc=document.createElement('canvas');
+  const maxW=PAPER_W-MARGIN*2;
+  const fontCss='"'+FONTS[state.font]+'"';
+  const lines=layoutLines(maxW,fontCss);
+  const step=state.size*state.lh;
+  const H=Math.max(400,Math.ceil(TOP+lines.length*step+state.size+BOTTOM));
+  tc.width=PAPER_W*DPR; tc.height=H*DPR;
+  const g=tc.getContext('2d');
+  g.setTransform(DPR,0,0,DPR,0,0);
+  lines.forEach(function(line,li){
+    if(line.length) drawFontLine(g,line,li,maxW,step);
+  });
+
+  // 裁剪到非透明边界
+  const img=g.getImageData(0,0,tc.width,tc.height);
+  const d=img.data;
+  let minX=tc.width,minY=tc.height,maxX=0,maxY=0,found=false;
+  for(let y=0;y<tc.height;y++){
+    for(let x=0;x<tc.width;x++){
+      if(d[(y*tc.width+x)*4+3]>8){
+        found=true;
+        if(x<minX)minX=x; if(x>maxX)maxX=x;
+        if(y<minY)minY=y; if(y>maxY)maxY=y;
+      }
+    }
+  }
+  if(!found) return tc;
+  const cpad=Math.ceil(state.size*0.15*DPR);
+  minX=Math.max(0,minX-cpad);minY=Math.max(0,minY-cpad);
+  maxX=Math.min(tc.width-1,maxX+cpad);maxY=Math.min(tc.height-1,maxY+cpad);
+  const cw=maxX-minX+1, ch=maxY-minY+1;
+  const out=document.createElement('canvas');
+  out.width=cw;out.height=ch;
+  out.getContext('2d').drawImage(tc,minX,minY,cw,ch,0,0,cw,ch);
+  return out;
+}
+
+/* ---------- 事件绑定 ---------- */
+function bindSeg(id,key,after){
+  const box = $(id);
+  box.addEventListener('click',function(e){
+    const b = e.target.closest('button');
+    if(!b || !box.contains(b)) return;
+    Array.prototype.forEach.call(box.querySelectorAll('button'),function(x){ x.classList.toggle('on',x===b); });
+    state[key] = b.dataset.v;
+    if(after) after();
+    draw();
+  });
+}
+function bindRange(id,key,labelId,fmt,isAdv){
+  const el = $(id);
+  el.addEventListener('input',function(){
+    const v = parseFloat(el.value);
+    if(isAdv) state.adv[key] = v; else state[key] = v;
+    if(labelId) $(labelId).textContent = fmt(v);
+    draw();
+  });
+}
+
+$('text').addEventListener('input',function(){ state.text = this.value; draw(); });
+window.PersonalHandwriting.setOnChange(draw);
+$('modeSeg').addEventListener('click',function(e){
+  const b=e.target.closest('button');
+  if(!b) return;
+  this.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+  state.mode=b.dataset.v;
+  $('ordinaryControls').hidden=state.mode!=='ordinary';
+  $('personalControls').hidden=state.mode!=='personal';
+  $('ordinaryNote').hidden=state.mode!=='ordinary';
+  $('fontNote').hidden=state.mode!=='ordinary';
+  $('personalNote').hidden=state.mode!=='personal';
+  draw();
+});
+bindRange('penStrength','penStrength','penStrengthVal',v=>String(v));
+bindSeg('profileSeg','profile');
+bindSeg('fontSeg','font');
+bindSeg('inkSeg','ink');
+bindSeg('paperSeg','paper');
+bindRange('messy','messy','messyVal',v=>String(v));
+/* 字号：滑块与档位按钮双向联动 */
+function syncSizeBtns(v){
+  var btns=document.querySelectorAll('#sizeSeg button'),hit=false;
+  btns.forEach(function(b){ if(parseInt(b.dataset.v,10)===v){b.classList.add('on');hit=true;}else b.classList.remove('on'); });
+  return hit;
+}
+$('size').addEventListener('input',function(){
+  state.size=parseInt(this.value,10);
+  $('sizeVal').textContent=state.size;
+  syncSizeBtns(state.size);
+  draw();
+});
+$('sizeSeg').addEventListener('click',function(e){
+  var b=e.target.closest('button'); if(!b) return;
+  var v=parseInt(b.dataset.v,10);
+  state.size=v;
+  $('size').value=v;
+  $('sizeVal').textContent=v;
+  syncSizeBtns(v);
+  draw();
+});
+bindRange('lh','lh','lhVal',v=>v.toFixed(1));
+bindRange('ls','ls','lsVal',v=>String(v));
+$('cpl').addEventListener('input',function(){
+  state.charsPerLine=parseInt(this.value,10);
+  $('cplVal').textContent=state.charsPerLine===0?'自动':state.charsPerLine+' 字';
+  draw();
+});
+/* 字幅宽度：滑块 + 直接拖纸张右边缘 */
+function applyPaperWidth(w){
+  w=Math.max(360,Math.min(1600,Math.round(w)));
+  PAPER_W=w;
+  $('pw').value=w;
+  $('pwVal').textContent=w;
+  draw();
+}
+$('pw').addEventListener('input',function(){ applyPaperWidth(parseInt(this.value,10)); });
+(function(){
+  var h=$('pwHandle'),dragging=false,startX=0,startW=0,ratio=1;
+  h.addEventListener('pointerdown',function(e){
+    dragging=true;startX=e.clientX;startW=PAPER_W;
+    // 画布可能被 CSS 缩放，换算屏幕像素到纸张内部单位
+    var shown=cv.getBoundingClientRect().width;
+    ratio=shown>0 ? PAPER_W/shown : 1;
+    h.classList.add('active');h.setPointerCapture(e.pointerId);e.preventDefault();
+  });
+  h.addEventListener('pointermove',function(e){
+    if(!dragging) return;
+    applyPaperWidth(startW+(e.clientX-startX)*ratio);
+  });
+  function end(e){ if(!dragging) return; dragging=false;h.classList.remove('active');try{h.releasePointerCapture(e.pointerId)}catch(_){} }
+  h.addEventListener('pointerup',end);
+  h.addEventListener('pointercancel',end);
+})();
+bindRange('gapWave','gapWave','gapWaveVal',v=>String(v));
+bindRange('yWave','yWave','yWaveVal',v=>String(v));
+$('tilt').addEventListener('input',function(){
+  state.tilt=parseInt(this.value,10);
+  $('tiltVal').textContent=state.tilt+'°';
+  draw();
+});
+bindRange('advRotate','rotate','advRotateVal',v=>v+'%',true);
+bindRange('advY','y','advYVal',v=>v+'%',true);
+bindRange('advGap','gap','advGapVal',v=>v+'%',true);
+bindRange('advInk','ink','advInkVal',v=>v+'%',true);
+bindRange('advWave','wave','advWaveVal',v=>v+'%',true);
+bindRange('advScale','scale','advScaleVal',v=>v+'%',true);
+
+$('btnRewrite').addEventListener('click',function(){
+  if(state.mode==='personal'&&!window.PersonalHandwriting.hasStyle()){toast(window.PersonalHandwriting.getStepMessage());return;}
+  state.seed = (Math.random()*1e9)|0;
+  draw();
+});
+$('btnSeed').addEventListener('click',function(){
+  const v = parseInt($('seedInput').value,10);
+  if(!isNaN(v)){ state.seed = v>>>0; draw(); }
+});
+$('seedInput').addEventListener('keydown',function(e){ if(e.key==='Enter') $('btnSeed').click(); });
+
+/* 复制手写图片到剪贴板，可直接 Ctrl+V 粘到 Word/WPS/微信。
+   优先用现代 Clipboard API（http/localhost 下可用）；
+   file:// 直接打开时该 API 常被禁用，给出提示并引导用「导出图片」。 */
+function toast(msg){
+  var t=document.createElement('div');
+  t.textContent=msg;
+  t.style.cssText='position:fixed;left:50%;top:76px;transform:translateX(-50%);background:#2c2a35;color:#fff;padding:9px 18px;border-radius:9px;font-size:13px;z-index:99;box-shadow:0 6px 20px rgba(0,0,0,.2)';
+  document.body.appendChild(t);
+  setTimeout(function(){t.parentNode&&t.parentNode.removeChild(t);},2200);
+}
+function saveBlobAsFile(blob){
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.download='手写字迹_透明底_'+(state.seed>>>0).toString(36).toUpperCase()+'.png';
+  a.href=url;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(url);},1000);
+}
+function currentText(){return state.mode==='personal'?$('personalTarget').value:state.text;}
+function hasCurrentText(){
+  if(currentText().trim())return true;
+  toast('请先输入要写的文字');return false;
+}
+function copySizeCanvas(source){
+  // 剪贴板按显示像素输出，避免 Word/WPS 将 2 倍高清 PNG 粘成超大图片。
+  var result=document.createElement('canvas');
+  result.width=Math.max(1,Math.round(source.width/DPR));
+  result.height=Math.max(1,Math.round(source.height/DPR));
+  result.getContext('2d').drawImage(source,0,0,result.width,result.height);
+  return result;
+}
+$('btnCopy').addEventListener('click',function(){
+  if(state.mode==='personal'&&!window.PersonalHandwriting.hasStyle()){toast(window.PersonalHandwriting.getStepMessage());return;}
+  if(!hasCurrentText())return;
+  var transparent=copySizeCanvas(buildTransparentCanvas());
+  transparent.toBlob(function(blob){
+    if(!blob){ toast('生成图片失败'); return; }
+    var fallback=function(){
+      saveBlobAsFile(blob);
+      toast('无法直接复制，已下载裁切后的透明字迹');
+    };
+    try{
+      if(navigator.clipboard && window.ClipboardItem){
+        navigator.clipboard.write([new ClipboardItem({'image/png':blob})])
+          .then(function(){ toast('已复制透明字迹 PNG，可到文档中粘贴'); })
+          .catch(fallback);
+      }else{
+        fallback();
+      }
+    }catch(e){ fallback(); }
+  },'image/png');
+});
+
+$('btnCopyText').addEventListener('click',function(){
+  if(!hasCurrentText())return;
+  var value=currentText();
+  var fallback=function(){
+    var field=document.createElement('textarea');field.value=value;
+    field.style.cssText='position:fixed;left:-9999px;top:0';
+    document.body.appendChild(field);field.select();
+    var ok=document.execCommand('copy');field.remove();
+    toast(ok?'已复制普通文字（不含手写效果）':'复制失败，请从输入框中选择文字复制');
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(value)
+      .then(function(){toast('已复制普通文字（不含手写效果）');})
+      .catch(fallback);
+  }else fallback();
+});
+
+$('btnExport').addEventListener('click',function(){
+  if(state.mode==='personal'&&!window.PersonalHandwriting.hasStyle()){toast(window.PersonalHandwriting.getStepMessage());return;}
+  if(!hasCurrentText())return;
+  buildTransparentCanvas().toBlob(function(blob){
+    if(blob)saveBlobAsFile(blob);else toast('导出字迹失败');
+  },'image/png');
+});
+
+$('seedInput').value = state.seed;
+draw();
+window.__moji={ buildTransparentCanvas:buildTransparentCanvas, state:state, draw:draw };
+if(document.fonts && document.fonts.ready){ document.fonts.ready.then(draw); }
+if(document.fonts && document.fonts.addEventListener){ document.fonts.addEventListener('loadingdone',draw); }
+})();
+</script>
+</body>
+</html>
