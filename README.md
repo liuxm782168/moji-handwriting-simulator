@@ -12,7 +12,7 @@
 
 ## 在线体验
 
-启用 GitHub Pages 后，从仓库的 Pages 链接打开。首次识别照片需要下载本仓库托管的 OCR 模型，可能要等待一会儿；进度栏会显示处理状态。
+[直接在线体验](https://liuxm782168.github.io/moji-handwriting-simulator/)。首次识别照片需要下载本仓库托管的 OCR 模型，可能要等待一会儿；进度栏会显示处理状态。
 
 ## 本地运行
 
